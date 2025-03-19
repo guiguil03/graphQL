@@ -208,7 +208,7 @@ GraphQL permet d'interroger le schéma lui-même (introspection):
 }
 ```
 
-Ou pour un type spécifique:
+Pour obtenir les détails d'un type spécifique:
 
 ```graphql
 {
@@ -219,53 +219,158 @@ Ou pour un type spécifique:
       type {
         name
         kind
+        ofType {
+          name
+          kind
+        }
       }
     }
   }
 }
 ```
 
-## Authentification et contexte
+## Mutations
 
-Dans une application réelle, le contexte est souvent utilisé pour gérer l'authentification:
+Les mutations sont utilisées pour modifier des données:
 
-```javascript
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  context: ({ req }) => {
-    // Vérifier le token JWT dans les en-têtes
-    const token = req.headers.authorization || '';
-    const user = getUser(token);
-    
-    return {
-      user,
-      db,
-      isAuthenticated: !!user
-    };
+```graphql
+mutation CreateNewUser {
+  createUser(input: {
+    name: "John Doe",
+    email: "john@example.com",
+    age: 30
+  }) {
+    id
+    name
+    email
   }
-});
+}
 ```
 
-Puis dans les résolveurs:
+### Mutations multiples
+
+Vous pouvez exécuter plusieurs mutations dans une seule requête:
+
+```graphql
+mutation ManageUsers {
+  createUser(input: { name: "Alice", email: "alice@example.com" }) {
+    id
+    name
+  }
+  
+  updateUser(id: "1", input: { name: "Bob Updated" }) {
+    id
+    name
+  }
+}
+```
+
+Important: Les mutations s'exécutent séquentiellement, contrairement aux requêtes qui peuvent s'exécuter en parallèle.
+
+## Subscriptions
+
+Les subscriptions permettent de recevoir des mises à jour en temps réel:
+
+```graphql
+subscription {
+  newPost {
+    id
+    title
+    author {
+      name
+    }
+  }
+}
+```
+
+## Bonnes pratiques pour les requêtes et resolvers
+
+### Requêtes
+
+1. **Nommez vos opérations** : Donnez des noms significatifs à vos requêtes et mutations
+2. **Utilisez des fragments** : Pour éviter la duplication de code
+3. **Limitez la profondeur** : Évitez les requêtes trop profondes qui pourraient surcharger le serveur
+4. **Pagination** : Utilisez la pagination pour les grandes collections
+
+### Resolvers
+
+1. **Gardez-les simples** : Chaque resolver doit faire une seule chose
+2. **Évitez le problème N+1** : Utilisez des solutions comme DataLoader pour optimiser les requêtes en base de données
+3. **Gestion des erreurs** : Implémentez une gestion d'erreurs cohérente
+4. **Validation** : Validez les entrées utilisateur avant de les traiter
+5. **Performances** : Surveillez les performances de vos resolvers et optimisez-les si nécessaire
+
+## Exemple complet
+
+Schéma:
+
+```graphql
+type User {
+  id: ID!
+  name: String!
+  posts: [Post!]!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  author: User!
+}
+
+type Query {
+  user(id: ID!): User
+  posts: [Post!]!
+}
+
+type Mutation {
+  createPost(title: String!, content: String!, authorId: ID!): Post!
+}
+```
+
+Resolvers:
 
 ```javascript
 const resolvers = {
   Query: {
-    me: (_, __, { user, isAuthenticated }) => {
-      if (!isAuthenticated) {
-        throw new Error('Vous devez être connecté');
-      }
-      return user;
-    },
-    protectedData: (_, __, { isAuthenticated }) => {
-      if (!isAuthenticated) {
-        throw new Error('Non autorisé');
-      }
-      return "Données protégées";
+    user: (_, { id }, { db }) => db.users.find(user => user.id === id),
+    posts: (_, __, { db }) => db.posts
+  },
+  User: {
+    posts: (parent, _, { db }) => {
+      return db.posts.filter(post => post.authorId === parent.id);
+    }
+  },
+  Post: {
+    author: (parent, _, { db }) => {
+      return db.users.find(user => user.id === parent.authorId);
+    }
+  },
+  Mutation: {
+    createPost: (_, { title, content, authorId }, { db }) => {
+      const newPost = {
+        id: String(db.posts.length + 1),
+        title,
+        content,
+        authorId
+      };
+      db.posts.push(newPost);
+      return newPost;
     }
   }
 };
 ```
 
-Dans la prochaine section, nous verrons comment utiliser les mutations pour modifier les données.
+Requête:
+
+```graphql
+query GetUserWithPosts {
+  user(id: "1") {
+    name
+    posts {
+      title
+      content
+    }
+  }
+}
+```

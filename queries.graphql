@@ -1,38 +1,38 @@
-query GetUsers{
-    users{
-        id
-        name
-        age
-    }
+query GetUsers {
+  users {
+    id
+    name
+    age
+  }
 }
 
-query GetPosts{
-    posts{
-        id
-        title
-        content
-        summary
+query GetPosts {
+  posts {
+    id
+    title
+    content
+    summary
     published
-    createdAts
-    updatedAt
-    }
+    created_at
+    updated_at
+  }
 }
 
-query GetPostById{
-    posts(id: "1"){
-        id
-        title
-        content
-        summary
-        published
-        createdAt
-        updatedAt
-    }
+query GetPostById {
+  postById(id: "1") {
+    id
+    title
+    content
+    summary
+    published
+    created_at
+    updated_at
+  }
 }
 
 # Mutations
 
-mutation {
+mutation CreateNewPost {
   createPost(
     title: "Nouveau post sur GraphQL"
     content: "Contenu détaillé du post sur GraphQL..."
@@ -43,11 +43,11 @@ mutation {
     content
     summary
     published
-    createdAt
+    created_at
   }
 }
 
-mutation  {
+mutation UpdateExistingPost {
   updatePost(
     id: "1"
     title: "Titre mis à jour"
@@ -56,12 +56,22 @@ mutation  {
     id
     title
     content
-    updatedAt
+    updated_at
   }
 }
 
-mutation {
-    deletePost (id: "1") {
+mutation PublishPost {
+  publishPost(id: "1") {
+    id
+    title
+    published
+    updated_at
+  }
 }
-  
 
+mutation DeletePost {
+  deletePost(id: "2") {
+    id
+    title
+  }
+}

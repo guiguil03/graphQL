@@ -12,7 +12,10 @@
   "type": "commonjs",
   "dependencies": {
     "apollo-server-express": "^3.13.0",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "graphql": "file:"
+    "graphql": "^16.10.0",
+    "pg": "^8.14.1",
+    "pg-pool": "^3.8.0"
   }
 }
