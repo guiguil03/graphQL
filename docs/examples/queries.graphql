@@ -1,0 +1,115 @@
+# Exemples de requêtes GraphQL à utiliser avec Apollo Studio
+
+# Récupérer tous les livres avec leurs auteurs
+query GetAllBooks {
+  books {
+    id
+    title
+    year
+    genres
+    author {
+      name
+    }
+  }
+}
+
+# Récupérer un livre spécifique
+query GetBook {
+  book(id: "1") {
+    id
+    title
+    year
+    genres
+    author {
+      id
+      name
+      birthYear
+      bookCount
+      books {
+        title
+      }
+    }
+  }
+}
+
+# Récupérer les livres par genre
+query GetBooksByGenre {
+  booksByGenre(genre: "Fantasy") {
+    id
+    title
+    author {
+      name
+    }
+  }
+}
+
+# Récupérer tous les auteurs avec leur nombre de livres
+query GetAllAuthors {
+  authors {
+    id
+    name
+    birthYear
+    bookCount
+  }
+}
+
+# Utilisation des fragments pour réutiliser des morceaux de requêtes
+fragment BookBasicInfo on Book {
+  id
+  title
+  year
+}
+
+fragment AuthorBasicInfo on Author {
+  id
+  name
+  birthYear
+}
+
+query BooksWithFragment {
+  books {
+    ...BookBasicInfo
+    genres
+    author {
+      ...AuthorBasicInfo
+    }
+  }
+}
+
+# Exemple de mutation pour ajouter un livre
+mutation AddNewBook {
+  addBook(input: {
+    title: "Le Trône de Fer"
+    authorId: "2"
+    year: 1996
+    genres: ["Fantasy", "Médiéval"]
+  }) {
+    id
+    title
+    author {
+      name
+    }
+  }
+}
+
+# Exemple de mutation pour mettre à jour un livre
+mutation UpdateBook {
+  updateBook(
+    id: "1", 
+    input: {
+      title: "Harry Potter à l'école des sorciers"
+      authorId: "1"
+      year: 1997
+      genres: ["Fantasy", "Jeunesse", "Magie"]
+    }
+  ) {
+    id
+    title
+    genres
+  }
+}
+
+# Exemple de mutation pour supprimer un livre
+mutation DeleteBook {
+  deleteBook(id: "5")
+}

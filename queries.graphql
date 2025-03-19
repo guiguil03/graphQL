@@ -1,0 +1,67 @@
+query GetUsers{
+    users{
+        id
+        name
+        age
+    }
+}
+
+query GetPosts{
+    posts{
+        id
+        title
+        content
+        summary
+    published
+    createdAts
+    updatedAt
+    }
+}
+
+query GetPostById{
+    posts(id: "1"){
+        id
+        title
+        content
+        summary
+        published
+        createdAt
+        updatedAt
+    }
+}
+
+# Mutations
+
+mutation {
+  createPost(
+    title: "Nouveau post sur GraphQL"
+    content: "Contenu détaillé du post sur GraphQL..."
+    summary: "Un aperçu rapide sur GraphQL"
+  ) {
+    id
+    title
+    content
+    summary
+    published
+    createdAt
+  }
+}
+
+mutation  {
+  updatePost(
+    id: "1"
+    title: "Titre mis à jour"
+    content: "Contenu mis à jour..."
+  ) {
+    id
+    title
+    content
+    updatedAt
+  }
+}
+
+mutation {
+    deletePost (id: "1") {
+}
+  
+
