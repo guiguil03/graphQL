@@ -8,7 +8,6 @@ const pool = new Pool({
   }
 });
 
-// Fonction utilitaire pour exécuter des requêtes
 const query = async (text, params) => {
   const client = await pool.connect();
   try {
@@ -19,10 +18,8 @@ const query = async (text, params) => {
   }
 };
 
-// Initialisation de la base de données
 const initDatabase = async () => {
   try {
-    // Création de la table users
     await query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -31,7 +28,6 @@ const initDatabase = async () => {
       )
     `);
 
-    // Création de la table posts
     await query(`
       CREATE TABLE IF NOT EXISTS posts (
         id SERIAL PRIMARY KEY,
@@ -44,10 +40,8 @@ const initDatabase = async () => {
       )
     `);
 
-    // Vérifier si des données existent déjà
     const existingUsers = await query('SELECT COUNT(*) FROM users');
     
-    // Ajouter des données de test si nécessaire
     if (parseInt(existingUsers[0].count) === 0) {
       await query(`
         INSERT INTO users (name, age) VALUES 

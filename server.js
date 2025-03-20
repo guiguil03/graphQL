@@ -1,12 +1,15 @@
 const express = require("express");
 const { ApolloServer, gql } = require("apollo-server-express");
 const cors = require("cors");
+const prisma = require("./prisma/client");
 
 const typeDefs = gql`
   type User {
     id: ID!
     name: String!
-    age: Int!
+    email: String!
+    posts: [Post!]!
+    createdAt: String!
   }
 
   type Post {
@@ -17,118 +20,114 @@ const typeDefs = gql`
     published: Boolean!
     createdAt: String!
     updatedAt: String
+    author: User!
+    authorId: Int!
   }
 
   type Query {
     hello: String
-    users: [User]
-    posts: [Post]
-    postID(id: ID!): [Post]
-    postSummary(id: ID!): [Post]
-    postContent(id: ID!): [Post]
+    users: [User!]!
+    user(id: ID!): User
+    posts(published: Boolean): [Post!]!
+    post(id: ID!): Post
   }
 
   type Mutation {
-    createPost(
-      title: String!,
-      content: String!,
-      published: Boolean!,
-      summary: String,
-      createdAt: String!,
-      updatedAt: String
-    ): Post,
-    updatePost(
-      id: ID!
-      title: String!,
-      content: String!,
-      published: Boolean!,
-      summary: String,
-      createdAt: String!,
-      updatedAt: String
-    ): Post
+    createUser(name: String!, email: String!, password: String!): User!
+    createPost(title: String!, content: String!, summary: String, published: Boolean, authorId: Int!): Post!
+    updatePost(id: ID!, title: String, content: String, summary: String, published: Boolean): Post!
     deletePost(id: ID!): Post
   }
-  
-  
-`
-
-const users = [
-  { id: "1", name: "Guigui", age: 25 },
-  { id: "2", name: "Test", age: 20 },
-];
-
-const posts = [
-  { 
-    id: "1", 
-    title: "Introduction à GraphQL", 
-    content: "GraphQL est un langage de requête pour les API...",
-    summary: "Découvrez les concepts de base de GraphQL et ses avantages.",
-    published: true, 
-    createdAt: "2025-03-15",
-    updatedAt: "2025-03-16",
-  },
-  { 
-    id: "2", 
-    title: "Les avantages de GraphQL par rapport à REST", 
-    content: "GraphQL offre plusieurs avantages par rapport aux API REST...",
-    summary: "Analyse comparative des architectures GraphQL et REST.",
-    published: true, 
-    createdAt: "2025-03-17",
-    updatedAt: null,
-  },
-  { 
-    id: "3", 
-    title: "Comment structurer un schéma GraphQL efficace", 
-    content: "La conception d'un bon schéma GraphQL est essentielle...",
-    summary: "Meilleures pratiques pour concevoir votre schéma GraphQL.",
-    published: true, 
-    createdAt: "2025-03-18",
-    updatedAt: "2025-03-18",
-  }
-];
+`;
 
 const resolvers = {
   Query: {
     hello: () => "Hello, GraphQL!",
-    users: () => users,
-    posts: () => posts.filter(post => post.published),
-    postID: (_, { id }) => posts.find(post => post.id === id),
-    postSummary: (_,  { id }) => posts.find(post => post.id === id).summary,
-    postContent: (_, { id }) => posts.find(post => post.id === id).content,
-  },
- Mutation: {
-  createPost: (_, { title, content, summary, published, createdAt, updatedAt }) => {
-    console.log("Création d'un post avec les arguments :", { title, content, summary, published, createdAt, updatedAt });
-    const newPost = {
-      id: posts.length + 1,
-      title,
-      content,
-      summary,
-      published,
-      createdAt,
-      updatedAt,
-    };
-    posts.push(newPost);
-    return newPost;
-  },
-  updatePost: (_, { id, title, content, summary, published, createdAt, updatedAt }) => {
-    const index = posts.findIndex(post => post.id === id);
-    if (index !== -1) {
-      const updatedPost = { id, title, content, summary, published, createdAt, updatedAt };
-      posts[index] = updatedPost;
-      return updatedPost;
+    users: async () => {
+      return await prisma.user.findMany();
+    },
+    user: async (_, { id }) => {
+      return await prisma.user.findUnique({
+        where: { id: parseInt(id) }
+      });
+    },
+    posts: async (_, { published }) => {
+      if (published !== undefined) {
+        return await prisma.post.findMany({
+          where: { published },
+          include: { author: true }
+        });
+      }
+      return await prisma.post.findMany({
+        include: { author: true }
+      });
+    },
+    post: async (_, { id }) => {
+      return await prisma.post.findUnique({
+        where: { id: parseInt(id) },
+        include: { author: true }
+      });
     }
-    return null;
   },
-  deletePost: (_, { id }) => {
-    const index = posts.findIndex(post => post.id === id);
-    if (index !== -1) {
-      const deletedPost = posts[index];
-      posts.splice(index, 1);
-      return deletedPost;
-    } 
+  Mutation: {
+    createUser: async (_, { name, email, password }) => {
+      return await prisma.user.create({
+        data: {
+          name,
+          email,
+          password // Note: dans une app réelle, le mot de passe devrait être hashé
+        }
+      });
+    },
+    createPost: async (_, { title, content, summary, published = false, authorId }) => {
+      return await prisma.post.create({
+        data: {
+          title,
+          content,
+          summary,
+          published,
+          authorId
+        },
+        include: { author: true }
+      });
+    },
+    updatePost: async (_, { id, title, content, summary, published }) => {
+      const data = {};
+      if (title !== undefined) data.title = title;
+      if (content !== undefined) data.content = content;
+      if (summary !== undefined) data.summary = summary;
+      if (published !== undefined) data.published = published;
+      
+      return await prisma.post.update({
+        where: { id: parseInt(id) },
+        data,
+        include: { author: true }
+      });
+    },
+    deletePost: async (_, { id }) => {
+      return await prisma.post.delete({
+        where: { id: parseInt(id) },
+        include: { author: true }
+      });
+    }
+  },
+  User: {
+    posts: async (parent) => {
+      return await prisma.post.findMany({
+        where: { authorId: parent.id }
+      });
+    }
+  },
+  Post: {
+    author: async (parent) => {
+      if (parent.author) {
+        return parent.author;
+      }
+      return await prisma.user.findUnique({
+        where: { id: parent.authorId }
+      });
+    }
   }
- }
 }
 
 const startServer = async () => {
@@ -148,9 +147,33 @@ const startServer = async () => {
 
     console.log(" Schéma GraphQL chargé :", server.schema); 
 
-    app.listen(4000, () => {
-      console.log(` Serveur GraphQL prêt sur http://localhost:4000${server.graphqlPath}`);
-    });
+    // Ports à essayer en séquence si un port est déjà utilisé
+    const ports = [4000, 4001, 4002, 4003, 5000];
+    
+    const startListening = (portIndex = 0) => {
+      if (portIndex >= ports.length) {
+        console.error(" Tous les ports sont occupés. Impossible de démarrer le serveur.");
+        return;
+      }
+      
+      const port = ports[portIndex];
+      
+      const httpServer = app.listen(port, () => {
+        console.log(` Serveur GraphQL prêt sur http://localhost:${port}${server.graphqlPath}`);
+      });
+      
+      httpServer.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.log(` Port ${port} déjà utilisé, essai avec le port suivant...`);
+          httpServer.close();
+          startListening(portIndex + 1);
+        } else {
+          console.error(" Erreur lors du démarrage du serveur:", err);
+        }
+      });
+    };
+    
+    startListening();
   } catch (error) {
     console.error(" Erreur au démarrage du serveur GraphQL:", error);
   }

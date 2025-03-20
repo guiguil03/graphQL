@@ -1,76 +1,148 @@
-query GetUsers {
+# Queries
+
+# Requête Hello World
+query HelloWorld {
+  hello
+}
+
+# Récupérer tous les utilisateurs
+query GetAllUsers {
   users {
     id
     name
-    age
+    email
+    createdAt
+    posts {
+      id
+      title
+    }
   }
 }
 
-query GetPosts {
+# Récupérer un utilisateur par ID
+query GetUserById {
+  user(id: "1") {
+    id
+    name
+    email
+    createdAt
+    posts {
+      id
+      title
+      published
+    }
+  }
+}
+
+# Récupérer tous les posts
+query GetAllPosts {
   posts {
     id
     title
     content
     summary
     published
-    created_at
-    updated_at
+    createdAt
+    updatedAt
+    author {
+      id
+      name
+    }
   }
 }
 
-query GetPostById {
-  postById(id: "1") {
+# Récupérer les posts publiés
+query GetPublishedPosts {
+  posts(published: true) {
     id
     title
     content
     summary
     published
-    created_at
-    updated_at
+    createdAt
+    author {
+      id
+      name
+    }
+  }
+}
+
+# Récupérer un post par ID
+query GetPostById {
+  post(id: "1") {
+    id
+    title
+    content
+    summary
+    published
+    createdAt
+    updatedAt
+    author {
+      id
+      name
+      email
+    }
   }
 }
 
 # Mutations
 
-mutation CreateNewPost {
+# Créer un nouvel utilisateur
+mutation CreateUser {
+  createUser(
+    name: "Nouveau Utilisateur"
+    email: "nouveau@example.com"
+    password: "motdepasse123"
+  ) {
+    id
+    name
+    email
+    createdAt
+  }
+}
+
+# Créer un nouveau post
+mutation CreatePost {
   createPost(
-    title: "Nouveau post sur GraphQL"
-    content: "Contenu détaillé du post sur GraphQL..."
-    summary: "Un aperçu rapide sur GraphQL"
+    title: "Nouveau post avec Prisma"
+    content: "Contenu détaillé du post créé avec Prisma..."
+    summary: "Un aperçu rapide sur l'utilisation de Prisma avec GraphQL"
+    published: true
+    authorId: 1
   ) {
     id
     title
     content
     summary
     published
-    created_at
+    createdAt
+    author {
+      name
+    }
   }
 }
 
-mutation UpdateExistingPost {
+# Mettre à jour un post existant
+mutation UpdatePost {
   updatePost(
     id: "1"
-    title: "Titre mis à jour"
-    content: "Contenu mis à jour..."
+    title: "Post mis à jour avec Prisma"
+    content: "Contenu mis à jour avec Prisma"
+    summary: "Résumé mis à jour"
+    published: true
   ) {
     id
     title
     content
-    updated_at
-  }
-}
-
-mutation PublishPost {
-  publishPost(id: "1") {
-    id
-    title
+    summary
     published
-    updated_at
+    updatedAt
   }
 }
 
+# Supprimer un post
 mutation DeletePost {
-  deletePost(id: "2") {
+  deletePost(id: "3") {
     id
     title
   }
